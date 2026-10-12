@@ -59,6 +59,21 @@ export function segmentsToAppleWorkout(
   const cooldowns = segments.filter((s) => s.type === "cooldown");
   const main = segments.filter((s) => s.type !== "warmup" && s.type !== "cooldown");
 
+  // A slower pace is a lower speed, so the slow end is the minimum.
+  const alertFor = (zone: number) => {
+    if (!paces) return undefined;
+    const { slow, fast } = paceRangeSeconds(zone, paces, factor);
+    return new SpeedRangeAlert(
+      new Speed(new Distance(1, "kilometers"), new Duration(slow, "seconds")),
+      new Speed(new Distance(1, "kilometers"), new Duration(fast, "seconds")),
+      "average",
+    );
+  };
+
+  // Warm-up, cool-down and recovery jogs all keep the easy range, so the watch
+  // tells you to slow down if you start too fast. Zones 1 and 2 share one range.
+  const EASY_ZONE = 1;
+
   // The format has one warm-up step and one cool-down step, so several
   // consecutive ones are merged into a single step of their total duration.
   const merged = (list: TimelineSegment[]) =>
@@ -69,6 +84,8 @@ export function segmentsToAppleWorkout(
           "seconds",
         ),
       ),
+      undefined,
+      alertFor(EASY_ZONE),
     );
 
   if (warmups.length > 0) custom.warmup = merged(warmups);
@@ -78,16 +95,8 @@ export function segmentsToAppleWorkout(
     const block = custom.addBlock(1);
     for (const seg of main) {
       const purpose = seg.isRecovery ? "recovery" : "work";
-      let alert;
-      if (!seg.isRecovery && paces && seg.zoneNumber) {
-        const { slow, fast } = paceRangeSeconds(seg.zoneNumber, paces, factor);
-        // A slower pace is a lower speed, so the slow end is the minimum.
-        alert = new SpeedRangeAlert(
-          new Speed(new Distance(1, "kilometers"), new Duration(slow, "seconds")),
-          new Speed(new Distance(1, "kilometers"), new Duration(fast, "seconds")),
-          "average",
-        );
-      }
+      const zone = seg.isRecovery ? EASY_ZONE : seg.zoneNumber;
+      const alert = zone ? alertFor(zone) : undefined;
       block.addStep(purpose, goalFor(seg), seg.description.substring(0, 32) || undefined, alert);
     }
   }

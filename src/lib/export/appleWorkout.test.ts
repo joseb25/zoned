@@ -40,15 +40,28 @@ describe("segmentsToAppleWorkout", () => {
     expect(back.custom?.blocks[0].steps.length).toBe(3);
   });
 
-  test("writes pace alerts on work steps only, and none without a VMA", () => {
-    const withVma = segmentsToAppleWorkout(kit, SEGMENTS, "x", { vma: 15 });
-    const steps = decode(encode(withVma)).custom!.blocks[0].steps;
+  test("writes a pace alert on every step, and none without a VMA", () => {
+    const withVma = decode(encode(segmentsToAppleWorkout(kit, SEGMENTS, "x", { vma: 15 })));
+    const steps = withVma.custom!.blocks[0].steps;
     expect(steps[0].step.alert).toBeDefined();
-    expect(steps[1].step.alert).toBeUndefined();
+    expect(steps[1].step.alert).toBeDefined();
+    expect(withVma.custom!.warmup?.alert).toBeDefined();
+    expect(withVma.custom!.cooldown?.alert).toBeDefined();
 
-    const without = segmentsToAppleWorkout(kit, SEGMENTS, "x");
-    const plain = decode(encode(without)).custom!.blocks[0].steps;
+    const without = decode(encode(segmentsToAppleWorkout(kit, SEGMENTS, "x")));
+    const plain = without.custom!.blocks[0].steps;
     expect(plain.every((s) => s.step.alert === undefined)).toBe(true);
+    expect(without.custom!.warmup?.alert).toBeUndefined();
+    expect(without.custom!.cooldown?.alert).toBeUndefined();
+  });
+
+  test("recovery and warm-up use the easy range, slower than the work range", () => {
+    const back = decode(encode(segmentsToAppleWorkout(kit, SEGMENTS, "x", { vma: 15 })));
+    const work = JSON.stringify(back.custom!.blocks[0].steps[0].step.alert);
+    const recovery = JSON.stringify(back.custom!.blocks[0].steps[1].step.alert);
+    const warmup = JSON.stringify(back.custom!.warmup?.alert);
+    expect(recovery).not.toBe(work);
+    expect(warmup).toBe(recovery);
   });
 
   test("a heat factor slows the pace range", () => {
