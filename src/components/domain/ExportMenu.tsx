@@ -21,7 +21,8 @@ import {
 import { ExportDatePicker } from "./ExportDatePicker";
 import { ExportableWorkoutCard } from "./ExportableWorkoutCard";
 import { FitTransferGuide } from "./FitTransferGuide";
-import { exportToICS, exportToPNG, exportToPDF, exportToFIT } from "@/lib/export";
+import { exportToICS, exportToPNG, exportToPDF, exportToFIT, exportToAppleWorkout } from "@/lib/export";
+import { loadRunnerProfile } from "@/lib/runnerProfile";
 import { toast } from "@/components/ui/toast";
 import type { WorkoutTemplate } from "@/types";
 
@@ -117,6 +118,20 @@ export function ExportMenu({ workout, className, size = "sm", variant = "default
     }
   };
 
+  const handleAppleExport = async () => {
+    setIsExporting(true);
+    const toastId = toast.loading(t("export.loading.apple", t("export.title")));
+    try {
+      // Pace alerts come from the VMA saved in the runner profile, if there is one.
+      await exportToAppleWorkout(workout, { vma: loadRunnerProfile()?.vma });
+      toast.success(t("export.success.apple"), { id: toastId });
+    } catch (error) {
+      toast.failure(t("export.error.apple"), error, { id: toastId });
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   return (
     <>
       <DropdownMenu>
@@ -147,6 +162,10 @@ export function ExportMenu({ workout, className, size = "sm", variant = "default
           <DropdownMenuItem onClick={handleFITExport}>
             <Watch />
             {t("export.garmin")}
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={handleAppleExport}>
+            <Watch />
+            {t("export.apple")}
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>

@@ -16,6 +16,7 @@ export { exportToICS } from "./ics";
 export { exportToPNG } from "./png";
 export { exportToPDF } from "./pdf";
 export { exportToFIT } from "./fit";
+export { exportToAppleWorkout } from "./appleWorkout";
 export { exportPlanToICS } from "./planIcs";
 export { exportPlanToPDF } from "./planPdf";
 

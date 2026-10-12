@@ -144,6 +144,12 @@ export interface PlanSession {
   completedAt?: string;          // ISO date
   actualDurationMin?: number;
   actualDistanceKm?: number;
+  /**
+   * Average pace of the hard part only (the tempo block, the interval reps), in
+   * min/km, typed in by the runner. The whole-session average would include
+   * warm-up and rests, so it cannot be compared with a target pace.
+   */
+  actualWorkPaceMinKm?: number;
   rpe?: number;                  // 1-10 Rate of Perceived Effort
   userNote?: string;             // Free-form note captured at completion (does not overwrite generated `notes`)
   isSuggestion?: boolean;          // v2: true if auto-suggested (user can dismiss)

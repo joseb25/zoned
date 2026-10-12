@@ -229,6 +229,7 @@
     "pdf": "Document (PDF)",
     "json": "Data (JSON)",
     "garmin": "Garmin (FIT)",
+    "apple": "Apple Watch (.workout)",
     "selectDateTime": "Select date and time",
     "download": "Download",
     "dateLabel": "Date",
@@ -238,19 +239,22 @@
       "image": "Image exported",
       "imageShared": "Image ready to save",
       "pdf": "PDF document exported",
-      "garmin": "Garmin file exported"
+      "garmin": "Garmin file exported",
+      "apple": "Apple Watch file exported"
     },
     "error": {
       "calendar": "Calendar export failed.",
       "image": "Image export failed.",
       "pdf": "PDF export failed.",
-      "garmin": "Garmin export failed."
+      "garmin": "Garmin export failed.",
+      "apple": "Apple Watch export failed."
     },
     "loading": {
       "calendar": "Generating calendar…",
       "image": "Generating image…",
       "pdf": "Generating PDF…",
-      "garmin": "Generating Garmin file…"
+      "garmin": "Generating Garmin file…",
+      "apple": "Generating Apple Watch file…"
     },
     "planPdf": {
       "freePlan": "Free plan",
