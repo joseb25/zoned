@@ -307,10 +307,23 @@
     "skippedHint": "Cette séance n'a pas eu lieu",
     "actualDuration": "Durée réelle",
     "actualDistance": "Distance réelle (km)",
+    "workPaceLabel": "Allure de la partie dure (min/km)",
+    "workPaceHint": "Facultatif. Moyenne du bloc tempo ou des répétitions seulement, sans échauffement ni trots. Elle alimente la suggestion de VMA.",
     "rpeLabel": "Ressenti (RPE)",
     "noteLabel": "Note",
     "notePlaceholder": "Facultatif, fatigue, météo, sensations…",
     "save": "Enregistrer"
+  },
+  "vmaSuggestion": {
+    "fasterTitle": "Tes séances dures sont plus rapides que les cibles",
+    "slowerTitle": "Tes séances dures sont plus lentes que les cibles",
+    "fasterText": "Sur tes {{count}} dernières séances dures, tu as couru environ {{deviation}} % plus vite que l'allure cible. Une VMA de {{suggested}} km/h (actuellement {{current}}, {{change}} %) conviendrait mieux.",
+    "slowerText": "Sur tes {{count}} dernières séances dures, tu as couru environ {{deviation}} % plus lentement que l'allure cible. Une VMA de {{suggested}} km/h (actuellement {{current}}, {{change}} %) conviendrait mieux.",
+    "impact": "L'appliquer met à jour les allures des séances à venir de ce plan, et la VMA enregistrée dans ton profil, que les alertes de l'Apple Watch utilisent.",
+    "apply": "Appliquer la VMA {{vma}}",
+    "dismiss": "Plus tard",
+    "applied": "VMA mise à jour : {{vma}} km/h",
+    "profileFailed": "Le plan est à jour, mais la VMA de ton profil n'a pas été enregistrée."
   },
   "rpe": {
     "title": "RPE · Effort ressenti",

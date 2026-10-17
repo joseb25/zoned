@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import type { PlanSession, PlanWeek, TrainingPlan } from "@/types/plan";
 import { calculateTrainingPaces } from "./paceEngine";
-import { applyVmaAdjustment, suggestVmaAdjustment } from "./paceAdapt";
+import { applyVmaAdjustment, isQualitySessionType, suggestVmaAdjustment } from "./paceAdapt";
 
 const VMA = 15;
 const thresholdTarget = (() => {
@@ -135,5 +135,59 @@ describe("applyVmaAdjustment", () => {
     expect(next.weeks[0].sessions[0].paceNotes?.[0].paceMinKm).toBe(old.min);
     expect(next.weeks[1].sessions[0].paceNotes?.[0].paceMinKm).toBe(fresh.min);
     expect(p.config.vma).toBe(VMA);
+  });
+
+  test("stamps the adjustment time on the plan", () => {
+    const at = new Date("2026-03-01T10:00:00.000Z");
+    const next = applyVmaAdjustment(plan([week(1, [session()])]), 16, 1, at);
+    expect(next.config.vmaAdjustedAt).toBe("2026-03-01T10:00:00.000Z");
+  });
+});
+
+describe("after an applied adjustment", () => {
+  const fast = thresholdTarget * 0.95;
+  const done = (completedAt: string) => session({ actualWorkPaceMinKm: fast, completedAt });
+
+  test("sessions done before it no longer count", () => {
+    const p = plan([
+      week(1, [done("2026-02-01T08:00:00.000Z")]),
+      week(2, [done("2026-02-08T08:00:00.000Z")]),
+      week(3, [done("2026-02-15T08:00:00.000Z")]),
+    ]);
+    expect(suggestVmaAdjustment(p, 3).reason).toBe("faster_than_target");
+
+    p.config.vmaAdjustedAt = "2026-02-20T00:00:00.000Z";
+    const after = suggestVmaAdjustment(p, 3);
+    expect(after.reason).toBe("not_enough_data");
+    expect(after.sampleSize).toBe(0);
+  });
+
+  test("sessions done after it count again", () => {
+    const p = plan([
+      week(1, [done("2026-02-25T08:00:00.000Z")]),
+      week(2, [done("2026-03-02T08:00:00.000Z")]),
+      week(3, [done("2026-03-09T08:00:00.000Z")]),
+    ]);
+    p.config.vmaAdjustedAt = "2026-02-20T00:00:00.000Z";
+    expect(suggestVmaAdjustment(p, 3).sampleSize).toBe(3);
+  });
+
+  test("a session without a completion time does not count", () => {
+    const p = plan([
+      week(1, [session({ actualWorkPaceMinKm: fast })]),
+      week(2, [session({ actualWorkPaceMinKm: fast })]),
+      week(3, [session({ actualWorkPaceMinKm: fast })]),
+    ]);
+    p.config.vmaAdjustedAt = "2026-02-20T00:00:00.000Z";
+    expect(suggestVmaAdjustment(p, 3).sampleSize).toBe(0);
+  });
+});
+
+describe("isQualitySessionType", () => {
+  test("knows which sessions have a comparable target pace", () => {
+    expect(isQualitySessionType("threshold")).toBe(true);
+    expect(isQualitySessionType("intervals")).toBe(true);
+    expect(isQualitySessionType("long_run")).toBe(false);
+    expect(isQualitySessionType("fartlek")).toBe(false);
   });
 });

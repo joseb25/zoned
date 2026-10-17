@@ -128,6 +128,7 @@ export function duplicatePlan(id: string, newName?: string): string | null {
       delete session.completedAt;
       delete session.actualDurationMin;
       delete session.actualDistanceKm;
+      delete session.actualWorkPaceMinKm;
       delete session.rpe;
       delete session.userNote;
     }
@@ -234,6 +235,7 @@ export function duplicateSession(
     completedAt: _completedAt,
     actualDurationMin: _actualDurationMin,
     actualDistanceKm: _actualDistanceKm,
+    actualWorkPaceMinKm: _actualWorkPaceMinKm,
     rpe: _rpe,
     userNote: _userNote,
     locked: _locked,
@@ -327,6 +329,8 @@ export interface SessionCompletionData {
   completedAt?: string;
   actualDurationMin?: number;
   actualDistanceKm?: number;
+  /** Average pace of the hard part only, in min/km. Written whenever the key is present, so undefined clears it. */
+  actualWorkPaceMinKm?: number;
   rpe?: number; // 1-10
   userNote?: string;
 }
@@ -350,6 +354,9 @@ export function updateSessionCompletion(
   session.completedAt = completion.completedAt;
   session.actualDurationMin = completion.actualDurationMin;
   session.actualDistanceKm = completion.actualDistanceKm;
+  if (Object.prototype.hasOwnProperty.call(completion, "actualWorkPaceMinKm")) {
+    session.actualWorkPaceMinKm = completion.actualWorkPaceMinKm;
+  }
   // Preserve existing RPE when cycling status (only overwrite if explicitly provided)
   if (completion.rpe !== undefined) {
     session.rpe = completion.rpe;
@@ -528,6 +535,7 @@ export function mergeSessionsIntoPlanWeek(
         completedAt: _completedAt,
         actualDurationMin: _actualDurationMin,
         actualDistanceKm: _actualDistanceKm,
+        actualWorkPaceMinKm: _actualWorkPaceMinKm,
         rpe: _rpe,
         userNote: _userNote,
         locked: _locked,

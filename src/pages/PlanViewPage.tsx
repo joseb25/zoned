@@ -98,6 +98,9 @@ import { isShareablePlan, sharedPlanUrl } from "@/lib/share/planShare";
 import { WeekGuidancePanel } from "@/components/domain/WeekGuidancePanel";
 import { usePlanViewMode } from "@/hooks/usePlanViewMode";
 import { getCurrentWeek, isPlanEnded } from "@/lib/planUtils";
+import { applyVmaAdjustment, suggestVmaAdjustment } from "@/lib/planGenerator/paceAdapt";
+import { updateBaseData } from "@/lib/runnerProfile";
+import { VmaSuggestionBanner } from "@/components/domain/VmaSuggestionBanner";
 import { SESSION_TYPE_LABELS } from "@/lib/labels";
 import { applyWeekValidationDecision, getUnresolvedSessions, getWeekResolutionSummary, type UnresolvedSessionPreview } from "@/lib/weekValidation";
 import Zone2 from "@/assets/doodles/zone-2.svg?react";
@@ -205,6 +208,8 @@ export function PlanViewPage() {
   const [showDateDialog, setShowDateDialog] = useState(false);
   const [editStartDate, setEditStartDate] = useState("");
   const [completionTarget, setCompletionTarget] = useState<{ weekNumber: number; sessionIndex: number } | null>(null);
+  // "Not now" on the VMA suggestion lasts until the page is opened again.
+  const [vmaSuggestionDismissed, setVmaSuggestionDismissed] = useState(false);
   // Deux cases portent désormais la même clé de clôture, celle de la bande
   // cette semaine et celle de la grille. On retient celle qui a été
   // cliquée plutôt que de deviner la première visible du document.
@@ -592,6 +597,21 @@ export function PlanViewPage() {
     runAdaptationIfReady(weekNumber, false);
   }, [plan, completionTarget, reloadPlan, runAdaptationIfReady, t]);
 
+  const handleApplyVma = useCallback((suggestedVma: number) => {
+    if (!plan) return;
+    const week = Math.max(1, Math.min(currentWeek || 1, plan.totalWeeks));
+    const savedPlan = savePlan(applyVmaAdjustment(plan, suggestedVma, week));
+    if (!savedPlan.ok) {
+      toast.failure(t("errors.planSaveFailed"), savedPlan);
+      return;
+    }
+    // The Watch export reads the VMA from the runner profile, so it follows.
+    const savedProfile = updateBaseData({ vma: suggestedVma });
+    if (savedProfile.ok) toast.success(t("vmaSuggestion.applied", { vma: suggestedVma }));
+    else toast.failure(t("vmaSuggestion.profileFailed"), savedProfile);
+    reloadPlan();
+  }, [plan, currentWeek, reloadPlan, t]);
+
   const handleWeekValidationDecision = useCallback((decision: "mark_skipped" | "keep_unresolved") => {
     if (!plan || !pendingWeekValidation) return;
 
@@ -895,6 +915,12 @@ export function PlanViewPage() {
   // commencé lise la semaine 1 et un plan fini sa dernière.
   const focusWeekNumber = Math.max(1, Math.min(currentWeek || 1, plan.totalWeeks));
   const focusWeek = plan.weeks[focusWeekNumber - 1];
+
+  // Only a plan with a VMA and a race has paces to compare real runs with.
+  const vmaSuggestion =
+    plan.config.planMode !== "free" && plan.config.vma && plan.config.raceDistance
+      ? suggestVmaAdjustment(plan, focusWeekNumber)
+      : null;
 
   /* ── ce qui se court cette semaine ──────────────────────────────────────
      Rien n'est calculé ici qui ne le soit déjà dans lib/. La bande ne fait
@@ -1324,6 +1350,14 @@ export function PlanViewPage() {
           </TabsContent>
 
           <TabsContent value="programme" className="zn-planview__programme">
+
+        {vmaSuggestion && !vmaSuggestionDismissed && (
+          <VmaSuggestionBanner
+            adjustment={vmaSuggestion}
+            onApply={handleApplyVma}
+            onDismiss={() => setVmaSuggestionDismissed(true)}
+          />
+        )}
 
         {/* View mode + the way to add a session */}
         <div className="zn-planview__toolbar">

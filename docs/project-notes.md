@@ -19,7 +19,7 @@ A single-user replacement for a paid running-coach app. It is a fork of Zoned (M
 | --- | --- | --- |
 | Apple Watch export | `src/lib/export/appleWorkoutBuilder.ts` (pure), `appleWorkout.ts` (download), menu entry in `src/components/domain/ExportMenu.tsx` | Working on a real device |
 | Heat adjustment | `src/lib/heat.ts`, input in `src/components/domain/AppleWatchExportDialog.tsx` | Connected to the Apple Watch export, untested on a real device |
-| Pace adaptation | `src/lib/planGenerator/paceAdapt.ts`, field `actualWorkPaceMinKm` on `PlanSession` | Code and tests only, no screen to enter paces or show the suggestion |
+| Pace adaptation | `src/lib/planGenerator/paceAdapt.ts`, field `actualWorkPaceMinKm` on `PlanSession`, input in `SessionCompletionPanel.tsx`, banner `VmaSuggestionBanner.tsx` on the plan page | Connected to screens, untested on a real device |
 
 ### Apple Watch export details
 
@@ -41,12 +41,20 @@ A single-user replacement for a paid running-coach app. It is a fork of Zoned (M
 - A pace alert on the dedicated warm-up slot stayed silent on a real run, while the main steps buzzed.
 - After moving warm-up and cool-down into regular block steps, the warm-up alert works on a real run.
 
+### Pace adaptation screens
+
+- The "mark session as done" panel asks for the average pace of the hard part (m:ss per km) on tempo, threshold, VO2max, interval, speed and race-specific sessions, optional, kept if between 2:00 and 12:00 per km. It is stored as `actualWorkPaceMinKm`. The plan loader (`planSchema.ts`) had been dropping that field, now it keeps it.
+- On the plan page, a banner appears when `suggestVmaAdjustment` says the VMA should move (3 quality sessions with a pace over the last 3 weeks). "Apply" calls `applyVmaAdjustment` (new VMA and recomputed pace notes for future planned sessions) and also saves the VMA in the runner profile, because the Watch export reads the profile VMA. "Not now" hides it until the page is opened again.
+- Applying stamps `config.vmaAdjustedAt`. Sessions completed before that stamp no longer count as samples, so the same runs cannot trigger a second raise.
+- No undo for an applied suggestion. Free-text session notes still quote the old paces, read `paceNotes`.
+
 ### Not verified
 
 - Whether the Watch buzzes when running too fast (ahead of the range), only "behind" was seen.
 - Whether the Watch buzzes when pace returns into the range.
 - Whether Apple's first-kilometre grace period for pace alerts applies to custom workouts.
 - Whether "current" pace (now the default) reacts better than "average", or buzzes too often while pace settles at the start of a step. The dialog switch makes it easy to compare.
+- The pace field and the VMA banner on a real device (layout on the phone, a full cycle of three quality sessions).
 - The heat dialog on a real device (layout on the phone, the effect of the slowed ranges on a real run).
 
 ## Constraints worth remembering
@@ -57,9 +65,8 @@ A single-user replacement for a paid running-coach app. It is a fork of Zoned (M
 
 ## Roadmap, unbuilt
 
-1. A place to enter the real average pace of the hard part of a session (`actualWorkPaceMinKm`), and a banner that shows and applies the VMA suggestion from `suggestVmaAdjustment`.
-2. Expose the treadmill (indoor) option in the export menu.
-3. Refresh stale free-text notes after a VMA change.
+1. Expose the treadmill (indoor) option in the export menu.
+2. Refresh stale free-text notes after a VMA change.
 
 ## Checks
 

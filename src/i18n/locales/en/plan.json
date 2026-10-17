@@ -307,10 +307,23 @@
     "skippedHint": "This session did not happen",
     "actualDuration": "Actual duration",
     "actualDistance": "Actual distance (km)",
+    "workPaceLabel": "Pace of the hard part (min/km)",
+    "workPaceHint": "Optional. Average of the tempo block or the reps only, without warm-up or jogs. It feeds the VMA suggestion.",
     "rpeLabel": "Rate of Perceived Effort",
     "noteLabel": "Note",
     "notePlaceholder": "Optional, fatigue, weather, sensations…",
     "save": "Save"
+  },
+  "vmaSuggestion": {
+    "fasterTitle": "Your hard sessions are faster than the targets",
+    "slowerTitle": "Your hard sessions are slower than the targets",
+    "fasterText": "Over your last {{count}} hard sessions you ran about {{deviation}} % faster than the target pace. A VMA of {{suggested}} km/h (now {{current}}, {{change}} %) would fit better.",
+    "slowerText": "Over your last {{count}} hard sessions you ran about {{deviation}} % slower than the target pace. A VMA of {{suggested}} km/h (now {{current}}, {{change}} %) would fit better.",
+    "impact": "Applying it updates the paces of the sessions still to come in this plan, and the VMA saved in your profile, which the Apple Watch alerts use.",
+    "apply": "Apply VMA {{vma}}",
+    "dismiss": "Not now",
+    "applied": "VMA updated to {{vma}} km/h",
+    "profileFailed": "The plan was updated, but the VMA in your profile was not saved."
   },
   "rpe": {
     "title": "RPE · Rate of Perceived Effort",

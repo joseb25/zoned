@@ -34,6 +34,11 @@ const QUALITY_SESSION_TYPES: ReadonlySet<string> = new Set([
   "race_specific",
 ]);
 
+/** Whether a session type has a single target pace that a real pace can be compared with. */
+export function isQualitySessionType(sessionType: string): boolean {
+  return QUALITY_SESSION_TYPES.has(sessionType);
+}
+
 export const PACE_ADAPT = {
   /** How many recent weeks to look at, current week included. */
   windowWeeks: 3,
@@ -107,6 +112,12 @@ export function suggestVmaAdjustment(
     for (const session of week.sessions) {
       if (!isCompleted(session)) continue;
       if (!QUALITY_SESSION_TYPES.has(session.sessionType)) continue;
+      // A session done before the last applied adjustment was measured against
+      // the old paces, counting it again would ratchet the VMA twice on the
+      // same evidence.
+      if (config.vmaAdjustedAt && (!session.completedAt || session.completedAt <= config.vmaAdjustedAt)) {
+        continue;
+      }
       const actual = session.actualWorkPaceMinKm;
       if (!actual || actual <= 0) continue;
 
@@ -204,9 +215,11 @@ export function applyVmaAdjustment(
   plan: TrainingPlan,
   newVma: number,
   currentWeekNumber: number,
+  now: Date = new Date(),
 ): TrainingPlan {
   const draft = structuredClone(plan);
   draft.config.vma = newVma;
+  draft.config.vmaAdjustedAt = now.toISOString();
   for (const week of draft.weeks) {
     if (week.weekNumber > currentWeekNumber) rewriteFutureWeek(week, newVma, draft);
   }

@@ -91,6 +91,25 @@ describe("normalizeStoredPlan", () => {
     expect(roundTripped?.weeks[0].sessions[0].discipline).toBe("cycling");
   });
 
+  test("preserves the real work pace and the VMA adjustment time through round-trip", () => {
+    const plan = makeLegacyPlan();
+    plan.weeks[0].sessions[0] = {
+      ...plan.weeks[0].sessions[0],
+      sessionType: "threshold",
+      status: "completed",
+      actualWorkPaceMinKm: 5.5,
+    };
+    plan.config = { ...plan.config, vmaAdjustedAt: "2026-03-01T10:00:00.000Z" };
+
+    const normalized = normalizeStoredPlan(plan);
+    expect(normalized?.weeks[0].sessions[0].actualWorkPaceMinKm).toBe(5.5);
+    expect(normalized?.config.vmaAdjustedAt).toBe("2026-03-01T10:00:00.000Z");
+
+    const roundTripped = normalizeStoredPlan(JSON.parse(JSON.stringify(normalized)));
+    expect(roundTripped?.weeks[0].sessions[0].actualWorkPaceMinKm).toBe(5.5);
+    expect(roundTripped?.config.vmaAdjustedAt).toBe("2026-03-01T10:00:00.000Z");
+  });
+
   test("preserves config.practice through round-trip", () => {
     const plan = makeLegacyPlan();
     // Le cas que la déduction ne couvre pas : un plan sans course visée.

@@ -64,6 +64,7 @@ function normalizeSession(raw: unknown): PlanSession | null {
     completedAt: typeof raw.completedAt === "string" ? raw.completedAt : undefined,
     actualDurationMin: asOptionalNumber(raw.actualDurationMin),
     actualDistanceKm: asOptionalNumber(raw.actualDistanceKm),
+    actualWorkPaceMinKm: asOptionalNumber(raw.actualWorkPaceMinKm),
     rpe: asOptionalNumber(raw.rpe),
     userNote: typeof raw.userNote === "string" ? raw.userNote : undefined,
     isSuggestion: typeof raw.isSuggestion === "boolean" ? raw.isSuggestion : undefined,
@@ -149,6 +150,7 @@ function normalizeConfig(raw: unknown, fallbackId: string, fallbackCreatedAt: st
       return n !== undefined && n > 0 ? n : undefined;
     })(),
     vma: asOptionalNumber(raw.vma),
+    vmaAdjustedAt: typeof raw.vmaAdjustedAt === "string" ? raw.vmaAdjustedAt : undefined,
     createdAt: asIsoString(raw.createdAt, fallbackCreatedAt),
     startDate: asOptionalIsoDate(raw.startDate),
     endDate: asOptionalIsoDate(raw.endDate),

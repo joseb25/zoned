@@ -88,6 +88,8 @@ export interface PlanConfig {
    */
   targetVolumeH?: number;
   vma?: number;
+  /** ISO time of the last VMA adjustment applied from the pace suggestion. Sessions done before it no longer count as samples. */
+  vmaAdjustedAt?: string;
   createdAt: string;
   startDate?: string; // ISO date, optional
   endDate?: string;   // ISO date, optional (auto-calculated from startDate + totalWeeks)

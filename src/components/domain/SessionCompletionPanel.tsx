@@ -14,6 +14,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { ChronoInput } from "@/components/ui/chrono-input";
 import { durationToMinutes, minutesToDurationDigits } from "@/lib/durationFields";
+import { paceDigitsToSeconds, secondsToPaceDigits } from "@/lib/paceFields";
+import { isQualitySessionType } from "@/lib/planGenerator/paceAdapt";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 import type { PlanSession } from "@/types/plan";
 import type { SessionCompletionData } from "@/lib/planStorage";
@@ -29,6 +31,17 @@ interface SessionCompletionPanelProps {
 }
 
 type Choice = "completed" | "modified" | "skipped";
+
+/** Slowest and fastest hard-part pace taken as real, in seconds per km (2:00 to 12:00). */
+const MIN_WORK_PACE_SEC = 120;
+const MAX_WORK_PACE_SEC = 720;
+
+/** The typed pace in min/km, or undefined when empty or not plausible. */
+function workPaceMinKm(digits: string): number | undefined {
+  const seconds = paceDigitsToSeconds(digits);
+  if (seconds === undefined || seconds < MIN_WORK_PACE_SEC || seconds > MAX_WORK_PACE_SEC) return undefined;
+  return seconds / 60;
+}
 
 function getDefaultRpe(sessionType: PlanSession["sessionType"] | undefined): number {
   switch (sessionType) {
@@ -62,6 +75,11 @@ interface CompletionFormProps {
   setDurationMin: (v: string) => void;
   distanceKm: string;
   setDistanceKm: (v: string) => void;
+  /** Digits at the m:ss mask, the average pace of the hard part. */
+  workPace: string;
+  setWorkPace: (v: string) => void;
+  /** Only quality sessions have a target pace to compare with. */
+  showWorkPace: boolean;
   rpe: number;
   setRpe: (v: number) => void;
   note: string;
@@ -80,6 +98,9 @@ function CompletionForm({
   setDurationMin,
   distanceKm,
   setDistanceKm,
+  workPace,
+  setWorkPace,
+  showWorkPace,
   rpe,
   setRpe,
   note,
@@ -170,6 +191,23 @@ function CompletionForm({
               />
             </label>
           </div>
+        )}
+
+        {/* Real pace of the hard part -- quality sessions only */}
+        {choice !== "skipped" && showWorkPace && (
+          <label className="zn-stack" style={{ "--gap": "var(--sp-3)" } as CSSProperties}>
+            <span className="zn-kicker zn-kicker--inline zn-plabel">
+              {t("sessionCompletion.workPaceLabel")}
+            </span>
+            <ChronoInput
+              format="ms"
+              digits={workPace}
+              onDigitsChange={setWorkPace}
+              placeholder="m:ss"
+              className="zn-pfield"
+            />
+            <span className="zn-pcomplete__hint">{t("sessionCompletion.workPaceHint")}</span>
+          </label>
         )}
 
         {/* RPE -- shown for completed & modified */}
@@ -273,6 +311,7 @@ export function SessionCompletionPanel({
   const [choice, setChoice] = useState<Choice>(initialChoice);
   const [durationMin, setDurationMin] = useState<string>("");
   const [distanceKm, setDistanceKm] = useState<string>("");
+  const [workPace, setWorkPace] = useState<string>("");
   const [rpe, setRpe] = useState<number>(5);
   const [note, setNote] = useState<string>("");
 
@@ -290,6 +329,7 @@ export function SessionCompletionPanel({
           ? String(session.targetDistanceKm)
           : "",
     );
+    setWorkPace(session.actualWorkPaceMinKm ? secondsToPaceDigits(session.actualWorkPaceMinKm * 60) : "");
     setRpe(session.rpe ?? getDefaultRpe(session.sessionType));
     setNote(session.userNote ?? "");
   }, [open, session, initialChoice]);
@@ -301,6 +341,8 @@ export function SessionCompletionPanel({
 
   if (!session) return null;
 
+  const showWorkPace = isQualitySessionType(session.sessionType);
+
   const handleSubmit = () => {
     const nowIso = new Date().toISOString();
 
@@ -310,6 +352,7 @@ export function SessionCompletionPanel({
         completedAt: undefined,
         actualDurationMin: undefined,
         actualDistanceKm: undefined,
+        actualWorkPaceMinKm: undefined,
         rpe: undefined,
         userNote: note,
       });
@@ -322,6 +365,7 @@ export function SessionCompletionPanel({
         completedAt: nowIso,
         actualDurationMin: undefined,
         actualDistanceKm: undefined,
+        actualWorkPaceMinKm: showWorkPace ? workPaceMinKm(workPace) : undefined,
         rpe,
         userNote: note,
       });
@@ -336,6 +380,7 @@ export function SessionCompletionPanel({
       completedAt: nowIso,
       actualDurationMin: Number.isFinite(parsedDuration) && parsedDuration >= 0 ? parsedDuration : undefined,
       actualDistanceKm: Number.isFinite(parsedDistance) && parsedDistance >= 0 ? parsedDistance : undefined,
+      actualWorkPaceMinKm: showWorkPace ? workPaceMinKm(workPace) : undefined,
       rpe,
       userNote: note,
     });
@@ -348,6 +393,9 @@ export function SessionCompletionPanel({
     setDurationMin,
     distanceKm,
     setDistanceKm,
+    workPace,
+    setWorkPace,
+    showWorkPace,
     rpe,
     setRpe,
     note,
