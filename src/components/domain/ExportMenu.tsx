@@ -1,11 +1,12 @@
 /**
  * ExportMenu - Dropdown menu for workout export options
  *
- * Provides 4 export formats:
+ * Provides 5 export formats:
  * - Calendar (ICS)
  * - Image (PNG) - Full workout card with all info
  * - Document (PDF)
  * - Garmin (FIT)
+ * - Apple Watch (.workout), after a small options dialog (heat, alert pace)
  */
 
 import { useState, useRef, useCallback } from "react";
@@ -19,9 +20,18 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { ExportDatePicker } from "./ExportDatePicker";
+import { AppleWatchExportDialog, type AppleWatchExportChoice } from "./AppleWatchExportDialog";
 import { ExportableWorkoutCard } from "./ExportableWorkoutCard";
 import { FitTransferGuide } from "./FitTransferGuide";
-import { exportToICS, exportToPNG, exportToPDF, exportToFIT, exportToAppleWorkout } from "@/lib/export";
+import {
+  exportToICS,
+  exportToPNG,
+  exportToPDF,
+  exportToFIT,
+  exportToAppleWorkout,
+  loadAlertMetric,
+  saveAlertMetric,
+} from "@/lib/export";
 import { loadRunnerProfile } from "@/lib/runnerProfile";
 import { toast } from "@/components/ui/toast";
 import type { WorkoutTemplate } from "@/types";
@@ -39,6 +49,7 @@ export function ExportMenu({ workout, className, size = "sm", variant = "default
   const { t } = useTranslation("common");
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showFitGuide, setShowFitGuide] = useState(false);
+  const [showAppleOptions, setShowAppleOptions] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   const [renderForExport, setRenderForExport] = useState(false);
   const exportCardRef = useRef<HTMLDivElement>(null);
@@ -118,12 +129,18 @@ export function ExportMenu({ workout, className, size = "sm", variant = "default
     }
   };
 
-  const handleAppleExport = async () => {
+  const handleAppleExport = async ({ paceFactor, alertMetric }: AppleWatchExportChoice) => {
+    setShowAppleOptions(false);
+    saveAlertMetric(alertMetric);
     setIsExporting(true);
     const toastId = toast.loading(t("export.loading.apple", t("export.title")));
     try {
       // Pace alerts come from the VMA saved in the runner profile, if there is one.
-      await exportToAppleWorkout(workout, { vma: loadRunnerProfile()?.vma });
+      await exportToAppleWorkout(workout, {
+        vma: loadRunnerProfile()?.vma,
+        paceFactor,
+        alertMetric,
+      });
       toast.success(t("export.success.apple"), { id: toastId });
     } catch (error) {
       toast.failure(t("export.error.apple"), error, { id: toastId });
@@ -163,7 +180,7 @@ export function ExportMenu({ workout, className, size = "sm", variant = "default
             <Watch />
             {t("export.garmin")}
           </DropdownMenuItem>
-          <DropdownMenuItem onClick={handleAppleExport}>
+          <DropdownMenuItem onClick={() => setShowAppleOptions(true)}>
             <Watch />
             {t("export.apple")}
           </DropdownMenuItem>
@@ -174,6 +191,15 @@ export function ExportMenu({ workout, className, size = "sm", variant = "default
         <ExportDatePicker
           onSelect={handleICSExport}
           onCancel={() => setShowDatePicker(false)}
+        />
+      )}
+
+      {showAppleOptions && (
+        <AppleWatchExportDialog
+          hasVma={loadRunnerProfile()?.vma !== undefined}
+          initialMetric={loadAlertMetric()}
+          onConfirm={handleAppleExport}
+          onCancel={() => setShowAppleOptions(false)}
         />
       )}
 

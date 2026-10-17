@@ -80,6 +80,19 @@ describe("segmentsToAppleWorkout", () => {
     expect(cooldown).toBe(recovery);
   });
 
+  test("alerts use current pace by default, average pace on request", () => {
+    // The file format has no explicit "current": the library reads it back as
+    // an absent metric, which is also what the Watch treats as current.
+    const metricOf = (opts: { alertMetric?: "current" | "average" }) => {
+      const back = decode(encode(segmentsToAppleWorkout(kit, SEGMENTS, "x", { vma: 15, ...opts })));
+      const alert = back.custom!.blocks[0].steps[1].step.alert as { metric?: string };
+      return alert.metric;
+    };
+    expect(metricOf({})).toBeUndefined();
+    expect(metricOf({ alertMetric: "current" })).toBeUndefined();
+    expect(metricOf({ alertMetric: "average" })).toBe("average");
+  });
+
   test("a heat factor slows the pace range", () => {
     const cool = decode(encode(segmentsToAppleWorkout(kit, SEGMENTS, "x", { vma: 15 })));
     const hot = decode(encode(segmentsToAppleWorkout(kit, SEGMENTS, "x", { vma: 15, paceFactor: 1.1 })));

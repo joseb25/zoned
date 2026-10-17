@@ -17,6 +17,8 @@ export { exportToPNG } from "./png";
 export { exportToPDF } from "./pdf";
 export { exportToFIT } from "./fit";
 export { exportToAppleWorkout } from "./appleWorkout";
+export { loadAlertMetric, saveAlertMetric } from "./watchExportPrefs";
+export type { AlertMetric } from "./appleWorkoutBuilder";
 export { exportPlanToICS } from "./planIcs";
 export { exportPlanToPDF } from "./planPdf";
 

@@ -19,7 +19,17 @@ export interface AppleWorkoutOptions {
   paceFactor?: number;
   /** Indoor run on a treadmill. */
   treadmill?: boolean;
+  /**
+   * Which pace the Watch compares with the range. "current" reacts within
+   * seconds, "average" is smoother but slow to flag a fast start in a long
+   * step. Defaults to "current".
+   */
+  alertMetric?: AlertMetric;
 }
+
+export type AlertMetric = "current" | "average";
+
+export const DEFAULT_ALERT_METRIC: AlertMetric = "current";
 
 /** Pace range of a zone in seconds per km, slowest first, with the heat factor applied. */
 function paceRangeSeconds(
@@ -43,6 +53,7 @@ export function segmentsToAppleWorkout(
 ) {
   const { WorkoutPlan, Step, TimeGoal, Duration, Distance, Speed, SpeedRangeAlert } = kit;
   const factor = options.paceFactor ?? 1;
+  const metric = options.alertMetric ?? DEFAULT_ALERT_METRIC;
   const paces = options.vma ? calculateTrainingPaces(options.vma) : null;
 
   const plan = new WorkoutPlan({ referenceId: crypto.randomUUID() });
@@ -66,7 +77,7 @@ export function segmentsToAppleWorkout(
     return new SpeedRangeAlert(
       new Speed(new Distance(1, "kilometers"), new Duration(slow, "seconds")),
       new Speed(new Distance(1, "kilometers"), new Duration(fast, "seconds")),
-      "average",
+      metric,
     );
   };
 
