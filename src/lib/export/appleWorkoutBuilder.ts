@@ -76,28 +76,44 @@ export function segmentsToAppleWorkout(
 
   // The format has one warm-up step and one cool-down step, so several
   // consecutive ones are merged into a single step of their total duration.
-  const merged = (list: TimelineSegment[]) =>
-    new Step(
-      new TimeGoal(
-        new Duration(
-          Math.max(1, Math.round(list.reduce((sum, s) => sum + s.durationMin, 0) * 60)),
-          "seconds",
-        ),
+  const totalGoal = (list: TimelineSegment[]) =>
+    new TimeGoal(
+      new Duration(
+        Math.max(1, Math.round(list.reduce((sum, s) => sum + s.durationMin, 0) * 60)),
+        "seconds",
       ),
-      undefined,
-      alertFor(EASY_ZONE),
     );
 
-  if (warmups.length > 0) custom.warmup = merged(warmups);
-  if (cooldowns.length > 0) custom.cooldown = merged(cooldowns);
+  // The Watch ignores a pace alert on the dedicated warm-up and cool-down
+  // slots: Apple's custom workout screen only offers a heart rate alert there,
+  // and a real run confirmed it stayed silent. Pace alerts do fire on regular
+  // block steps. So when pace alerts are written, warm-up and cool-down become
+  // ordinary "recovery" steps at the start and end of the block. The cost is
+  // that the Watch no longer labels them as warm-up and cool-down. Without a
+  // VMA there is no alert to lose, so the dedicated slots are kept.
+  const alertsOnWarmupSlots = paces !== null;
 
-  if (main.length > 0) {
+  if (!alertsOnWarmupSlots) {
+    if (warmups.length > 0) custom.warmup = new Step(totalGoal(warmups));
+    if (cooldowns.length > 0) custom.cooldown = new Step(totalGoal(cooldowns));
+  }
+
+  const blockWarmups = alertsOnWarmupSlots ? warmups : [];
+  const blockCooldowns = alertsOnWarmupSlots ? cooldowns : [];
+
+  if (main.length > 0 || blockWarmups.length > 0 || blockCooldowns.length > 0) {
     const block = custom.addBlock(1);
+    if (blockWarmups.length > 0) {
+      block.addStep("recovery", totalGoal(blockWarmups), "Warm-up", alertFor(EASY_ZONE));
+    }
     for (const seg of main) {
       const purpose = seg.isRecovery ? "recovery" : "work";
       const zone = seg.isRecovery ? EASY_ZONE : seg.zoneNumber;
       const alert = zone ? alertFor(zone) : undefined;
       block.addStep(purpose, goalFor(seg), seg.description.substring(0, 32) || undefined, alert);
+    }
+    if (blockCooldowns.length > 0) {
+      block.addStep("recovery", totalGoal(blockCooldowns), "Cool-down", alertFor(EASY_ZONE));
     }
   }
 

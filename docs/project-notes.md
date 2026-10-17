@@ -26,7 +26,8 @@ A single-user replacement for a paid running-coach app. It is a fork of Zoned (M
 - Uses `@bibixx/workoutkit` (MIT, reverse-engineered `.workout` format, works in the browser, no Apple developer account). Needs iOS 17 and watchOS 10 or later. The format has no public spec and could break with a future watchOS.
 - Pace targets come from the VMA saved in the runner profile, through `calculateTrainingPaces` and `getPaceForZone`. Without a VMA the file has no alerts.
 - Every step carries a `SpeedRangeAlert` (metric "average"): work steps use the zone range, warm-up, cool-down and recovery steps use the easy range (zones 1 and 2 share one range). The heat factor multiplies every range.
-- The format has one warm-up and one cool-down step, so consecutive warm-up segments are merged.
+- The Watch ignores a pace alert on its dedicated warm-up and cool-down slots (Apple's custom workout screen only offers a heart rate alert there, and a real run was silent during the warm-up). So with a VMA, warm-up and cool-down are written as ordinary "recovery" steps at the start and end of the block, named "Warm-up" and "Cool-down". The Watch no longer labels them as warm-up and cool-down. Without a VMA there are no alerts and the dedicated slots are used.
+- Consecutive warm-up segments are merged into one step, same for cool-down.
 - The `treadmill` option exists in the builder (writes an indoor workout) but the menu does not expose it.
 
 ### Verified on a real iPhone and Apple Watch
@@ -35,8 +36,12 @@ A single-user replacement for a paid running-coach app. It is a fork of Zoned (M
 - The Watch needs Haptics set to Default or Prominent and Silent Mode off, otherwise alerts are silent. This cost a round of debugging.
 - Indoor walking is not a valid test, the workout is outdoor and pace comes from GPS.
 
+- A pace alert on the dedicated warm-up slot stayed silent on a real run, while the main steps buzzed.
+
 ### Not verified
 
+- Whether the new warm-up and cool-down block steps buzz (the change that moved them out of the dedicated slots is untested on a real run).
+- Whether the Watch buzzes when running too fast (ahead of the range), only "behind" was seen.
 - Whether the Watch buzzes when pace returns into the range.
 - Whether Apple's first-kilometre grace period for pace alerts applies to custom workouts.
 - Whether "current" pace would react better than "average" on short intervals (the builder uses "average" today).

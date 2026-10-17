@@ -7,9 +7,11 @@
  * the Workout app offers to add it to the Watch. Requires iOS 17 and
  * watchOS 10 or later.
  *
- * Hard steps carry a pace-range alert taken from the runner's VMA, so the
- * Watch buzzes when the pace drifts out of range. Warm-up, cool-down and
- * recoveries carry no alert.
+ * Every step carries a pace-range alert taken from the runner's VMA, so the
+ * Watch buzzes when the pace drifts out of range. Warm-up and cool-down are
+ * written as ordinary block steps with the easy range, because the Watch
+ * ignores pace alerts on its dedicated warm-up and cool-down slots. Without a
+ * VMA the file has no alerts and uses those slots.
  *
  * The format is reverse engineered by the library, not specified by Apple, so
  * a future watchOS could stop accepting it.

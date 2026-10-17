@@ -34,41 +34,57 @@ describe("segmentsToAppleWorkout", () => {
 
     const back = decode(bytes);
     expect(back.custom?.displayName).toBe("Threshold 2x8");
+    expect(back.custom?.blocks.length).toBe(1);
+    // Warm-up, two threshold reps, one jog, cool-down: five regular steps.
+    expect(back.custom?.blocks[0].steps.length).toBe(5);
+  });
+
+  test("with a VMA, warm-up and cool-down are block steps, not the dedicated slots", () => {
+    // The Watch ignores a pace alert on the dedicated warm-up and cool-down
+    // slots, so they must not be used when alerts are written.
+    const back = decode(encode(segmentsToAppleWorkout(kit, SEGMENTS, "x", { vma: 15 })));
+    expect(back.custom?.warmup).toBeUndefined();
+    expect(back.custom?.cooldown).toBeUndefined();
+    const steps = back.custom!.blocks[0].steps;
+    expect(steps[0].step.displayName).toBe("Warm-up");
+    expect(steps[steps.length - 1].step.displayName).toBe("Cool-down");
+  });
+
+  test("without a VMA, warm-up and cool-down keep the dedicated slots and no alerts", () => {
+    const back = decode(encode(segmentsToAppleWorkout(kit, SEGMENTS, "x")));
     expect(back.custom?.warmup).toBeDefined();
     expect(back.custom?.cooldown).toBeDefined();
-    expect(back.custom?.blocks.length).toBe(1);
-    expect(back.custom?.blocks[0].steps.length).toBe(3);
+    expect(back.custom?.warmup?.alert).toBeUndefined();
+    expect(back.custom?.cooldown?.alert).toBeUndefined();
+    const steps = back.custom!.blocks[0].steps;
+    expect(steps.length).toBe(3);
+    expect(steps.every((s) => s.step.alert === undefined)).toBe(true);
   });
 
-  test("writes a pace alert on every step, and none without a VMA", () => {
-    const withVma = decode(encode(segmentsToAppleWorkout(kit, SEGMENTS, "x", { vma: 15 })));
-    const steps = withVma.custom!.blocks[0].steps;
-    expect(steps[0].step.alert).toBeDefined();
-    expect(steps[1].step.alert).toBeDefined();
-    expect(withVma.custom!.warmup?.alert).toBeDefined();
-    expect(withVma.custom!.cooldown?.alert).toBeDefined();
-
-    const without = decode(encode(segmentsToAppleWorkout(kit, SEGMENTS, "x")));
-    const plain = without.custom!.blocks[0].steps;
-    expect(plain.every((s) => s.step.alert === undefined)).toBe(true);
-    expect(without.custom!.warmup?.alert).toBeUndefined();
-    expect(without.custom!.cooldown?.alert).toBeUndefined();
-  });
-
-  test("recovery and warm-up use the easy range, slower than the work range", () => {
+  test("writes a pace alert on every step when a VMA is set", () => {
     const back = decode(encode(segmentsToAppleWorkout(kit, SEGMENTS, "x", { vma: 15 })));
-    const work = JSON.stringify(back.custom!.blocks[0].steps[0].step.alert);
-    const recovery = JSON.stringify(back.custom!.blocks[0].steps[1].step.alert);
-    const warmup = JSON.stringify(back.custom!.warmup?.alert);
+    const steps = back.custom!.blocks[0].steps;
+    expect(steps.length).toBe(5);
+    expect(steps.every((s) => s.step.alert !== undefined)).toBe(true);
+  });
+
+  test("warm-up, recovery and cool-down use the easy range, slower than the work range", () => {
+    const back = decode(encode(segmentsToAppleWorkout(kit, SEGMENTS, "x", { vma: 15 })));
+    const steps = back.custom!.blocks[0].steps;
+    const warmup = JSON.stringify(steps[0].step.alert);
+    const work = JSON.stringify(steps[1].step.alert);
+    const recovery = JSON.stringify(steps[2].step.alert);
+    const cooldown = JSON.stringify(steps[4].step.alert);
     expect(recovery).not.toBe(work);
     expect(warmup).toBe(recovery);
+    expect(cooldown).toBe(recovery);
   });
 
   test("a heat factor slows the pace range", () => {
     const cool = decode(encode(segmentsToAppleWorkout(kit, SEGMENTS, "x", { vma: 15 })));
     const hot = decode(encode(segmentsToAppleWorkout(kit, SEGMENTS, "x", { vma: 15, paceFactor: 1.1 })));
-    const a = JSON.stringify(cool.custom!.blocks[0].steps[0].step.alert);
-    const b = JSON.stringify(hot.custom!.blocks[0].steps[0].step.alert);
+    const a = JSON.stringify(cool.custom!.blocks[0].steps[1].step.alert);
+    const b = JSON.stringify(hot.custom!.blocks[0].steps[1].step.alert);
     expect(a).not.toBe(b);
   });
 
