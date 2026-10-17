@@ -37,10 +37,10 @@ A single-user replacement for a paid running-coach app. It is a fork of Zoned (M
 - Indoor walking is not a valid test, the workout is outdoor and pace comes from GPS.
 
 - A pace alert on the dedicated warm-up slot stayed silent on a real run, while the main steps buzzed.
+- After moving warm-up and cool-down into regular block steps, the warm-up alert works on a real run.
 
 ### Not verified
 
-- Whether the new warm-up and cool-down block steps buzz (the change that moved them out of the dedicated slots is untested on a real run).
 - Whether the Watch buzzes when running too fast (ahead of the range), only "behind" was seen.
 - Whether the Watch buzzes when pace returns into the range.
 - Whether Apple's first-kilometre grace period for pace alerts applies to custom workouts.
